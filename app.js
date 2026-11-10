@@ -152,22 +152,24 @@ function openCard(p, button) {
     pill.textContent = source.tag;
     $('large-source').append(pill);
   }
+  $('large-context').textContent = phraseContext(p);
   $('large-status').textContent = reviewLabel(t);
   $('large-status').hidden = !reviewLabel(t);
   $('fullscreen').showModal();
   focusProgrammatically($('close'));
 }
 
-function card(p, words, searching) {
+function phraseContext(p) {
+  const field = data.fields.find(item => item.id === p.field)?.title || p.field;
+  const stage = data.stages.find(item => item.id === p.stage)?.title || p.stage;
+  return [field, stage].filter(Boolean).join(' / ');
+}
+
+function card(p, words) {
   const t = p;
   const button = document.createElement('button');
   button.className = 'card-content';
   button.type = 'button';
-  let context;
-  if (searching) {
-    context = data.fields.find(f => f.id === p.field).title + ' / ' +
-      data.stages.find(s => s.id === p.stage).title;
-  }
 
   const translation = line(
     'translation',
@@ -176,22 +178,23 @@ function card(p, words, searching) {
   );
   translation.dir = data.languages.find(l => l.code === language).direction;
   translation.lang = language;
-  if (context) button.append(line('context', context));
-  button.append(translation);
+  const english = document.createElement('h3');
+  english.className = 'english';
+  english.lang = 'en';
+  english.dir = 'ltr';
+  marked(english, p.english, words);
+  button.append(english, translation);
   if (t.transliteration) {
     button.append(line('transliteration', t.transliteration, words));
   }
-  const english = line('english', p.english, words);
-  english.lang = 'en';
-  english.dir = 'ltr';
-  button.append(line('english-label', 'English'), english);
+  button.append(line('context', phraseContext(p)));
   const tags = document.createElement('div');
   tags.className = 'tags';
 
   if (t.reviewer?.trim()) {
     const badge = document.createElement('span');
     badge.className = 'badge reviewed';
-    badge.textContent = '✓ ' + reviewLabel(t);
+    badge.textContent = reviewLabel(t);
     tags.append(badge);
   }
   button.addEventListener('click', () => openCard(p, button));
@@ -233,6 +236,12 @@ function route() {
 
 async function render(focusHeading = false) {
   const state = route();
+  const activeTab = state.page.startsWith('quiz') ? '#/quiz'
+    : state.page === 'about' ? '#/about' : '#/';
+  for (const tab of document.querySelectorAll('.app-nav nav a')) {
+    if (tab.getAttribute('href') === activeTab) tab.setAttribute('aria-current', 'page');
+    else tab.removeAttribute('aria-current');
+  }
   if (state.page === 'quiz-play' && !quizRound) {
     location.replace('#/quiz');
     return;
@@ -332,7 +341,7 @@ async function render(focusHeading = false) {
       more.className = 'show-more';
       more.textContent = 'Show more';
       const appendBatch = () => {
-        for (const p of phrases.slice(shown, shown + 200)) grid.append(card(p, words, searching));
+        for (const p of phrases.slice(shown, shown + 200)) grid.append(card(p, words));
         shown += 200;
         more.hidden = shown >= phrases.length;
       };

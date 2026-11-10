@@ -13,8 +13,8 @@
   <header class="app-nav">
     <nav aria-label="Main">
       <a href="#/">Home</a>
-      <a href="#/quiz">Quiz me</a>
-      <a href="#/about">About us</a>
+      <a href="#/quiz">Quiz</a>
+      <a href="#/about">About</a>
     </nav>
     <button id="theme" type="button" aria-pressed="false" aria-label="Switch to dark mode"
       title="Switch to dark mode">
@@ -42,12 +42,12 @@
         <input id="search" type="search" placeholder="Search English or patient language…" autocomplete="off">
       </form>
     </div>
-    <a id="back" href="#/quiz" hidden>← Back to quiz setup</a>
+    <a id="back" class="button-link" href="#/quiz" hidden>← Quiz setup</a>
     <p id="count" role="status" aria-live="polite">Loading phrases…</p>
     <div id="results"></div>
   </main>
   <footer>
-    <p>Karanvir Gill · Arvin Zaker · Luka Vukovic · <a href="#/sources">Sources</a></p>
+    <p>Karanvir Gill · Arvin Zaker · Luka Vukovic <a class="button-link small" href="#/sources">Sources</a></p>
     <p>Use a professional interpreter for history, consent and results.</p>
   </footer>
   <dialog id="fullscreen" aria-labelledby="large-translation">
@@ -58,11 +58,14 @@
       <button id="close">Close ✕</button>
     </div>
     <div class="large-body">
-      <p id="large-status"></p>
+      <p id="large-english"></p>
       <p id="large-translation"></p>
       <p id="large-transliteration"></p>
-      <p id="large-english"></p>
-      <p id="large-source"></p>
+      <p id="large-context" class="context"></p>
+      <div class="tags">
+        <span id="large-status" class="badge reviewed"></span>
+        <span id="large-source"></span>
+      </div>
     </div>
   </dialog>
 </body>

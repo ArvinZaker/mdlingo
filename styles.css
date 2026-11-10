@@ -171,7 +171,7 @@ button:disabled {
   outline: none;
 }
 
-/* The navigation and inputs stick independently, in their natural document order. */
+/* Primary navigation remains available while the search controls stay in normal flow. */
 .app-nav {
   position: sticky;
   top: 0;
@@ -189,14 +189,37 @@ button:disabled {
 .app-nav nav {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: .25rem;
   min-width: 0;
 }
 
 .app-nav a {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  height: 44px;
+  padding: 0 1rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.app-nav a:hover {
+  background: var(--hover);
+}
+
+.app-nav a:active {
+  background: var(--pressed);
+}
+
+.app-nav a[aria-current='page'] {
+  color: var(--primary-text);
+  background: var(--primary);
+  font-weight: 700;
+}
+
+.app-nav a:focus-visible, #theme:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
 }
 
 #theme {
@@ -396,7 +419,8 @@ main > :not(#results), #results > :not(.areas):not(.cards):not(.about),
 
 .english {
   margin-bottom: 1rem;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
   line-height: 1.5;
 }
 
@@ -415,16 +439,36 @@ main > :not(#results), #results > :not(.areas):not(.cards):not(.about),
   margin: 0;
   padding: .2rem .65rem;
   border: 1px solid var(--border);
-  border-radius: 9999px;
-  color: var(--text);
+  gap: .3rem;
+  border-radius: 6px;
+  color: var(--link);
+  border-color: var(--link);
   background: var(--hover);
   font-size: .8rem;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.5;
 }
 
 .badge.reviewed, #large-status {
   background: var(--status-correct);
+  color: var(--correct-border);
+  border-color: var(--correct-border);
+}
+
+.source-tag::before {
+  content: '';
+  width: 1em;
+  height: 1em;
+  flex: 0 0 1em;
+  background: currentColor;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  background: linear-gradient(currentColor, currentColor) center / 1px 100% no-repeat;
+}
+
+.reviewed::before {
+  content: '✓';
+  font-weight: 700;
 }
 
 .tags a.source-tag {
@@ -560,20 +604,17 @@ body:has(dialog[open]) {
 }
 
 #large-english {
-  font-size: 1.2rem;
-  color: var(--muted);
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
-#large-status {
-  align-self: center;
-  padding: .2rem .65rem;
-  border-radius: 9999px;
-  font-size: .8rem;
+#large-source:empty {
+  display: none;
 }
 
-#large-source {
+.large-body > .tags {
+  justify-content: center;
   margin-top: auto;
-  padding-top: 1rem;
 }
 
 /* Quiz setup and play use the same column and primary action. */
@@ -945,15 +986,12 @@ body:has(dialog[open]) {
   }
 
   .app-nav nav {
-    gap: .75rem;
+    gap: .25rem;
     font-size: .875rem;
   }
 
-  .search-tools {
-    position: sticky;
-    top: 68px;
-    z-index: 20;
-    padding: .5rem 0;
+  .app-nav a {
+    padding-inline: .85rem;
   }
 
   .cards {
@@ -1000,4 +1038,56 @@ body:has(dialog[open]) {
 /* The tagline belongs to the home page only. */
 main:not(.home) > .intro {
   display: none;
+}
+
+/* Search controls share the available desktop width with labels above both inputs. */
+#language-home {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  main > .search-tools:not(#results) {
+    display: grid;
+    grid-template-columns: minmax(0, 35fr) minmax(0, 65fr);
+    align-items: end;
+    gap: 1rem;
+    max-width: var(--wide);
+  }
+
+  .search-tools .language-combo {
+    margin-bottom: 0;
+  }
+}
+
+/* Internal navigation drawn as buttons, not hyperlinks. */
+a.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background: var(--background);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+a.button-link:hover {
+  background: var(--hover);
+}
+a.button-link.small {
+  min-height: 36px;
+  margin-left: .5rem;
+  padding: 0 .75rem;
+  font-size: .875rem;
+}
+#back.button-link {
+  margin: .5rem 0 1rem;
+}
+#back.button-link:not([hidden]) {
+  display: inline-flex;
+  width: auto;
+  height: 44px;
+  line-height: 1;
 }
