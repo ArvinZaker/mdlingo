@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>MyHealthPhrase</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <button id="theme" type="button">Dark mode</button>
+  <main>
+    <h1>MyHealthPhrase</h1>
+    <p class="intro">Find a phrase. Show it to your patient.</p>
+    <label class="language-label" for="language">Patient language</label>
+    <div class="language-combo">
+      <input id="language" role="combobox" aria-autocomplete="list" aria-expanded="false"
+        aria-controls="language-options" autocomplete="off" spellcheck="false">
+      <ul id="language-options" role="listbox" aria-label="Patient languages" hidden></ul>
+    </div>
+    <form id="search-form" role="search">
+      <label class="search-label" for="search">Find a question or instruction</label>
+      <input id="search" type="search" placeholder="Search English or patient language…" autocomplete="off">
+    </form>
+    <a id="back" href="#/" hidden>← Home</a>
+    <h2 id="page-heading" tabindex="-1" hidden>Clinical areas</h2>
+    <p id="count" role="status" aria-live="polite">Loading phrases…</p>
+    <div id="results"></div>
+  </main>
+  <footer>
+    <p>Arvin Zaker · Karanvir Gill · <a href="#/sources">Sources</a></p>
+    <p>Translations are drafts and have not been reviewed.
+      Use a professional interpreter for history, consent and results.</p>
+  </footer>
+  <dialog id="fullscreen" aria-labelledby="large-translation">
+    <div class="dialog-tools">
+      <span>Show your patient</span>
+      <button id="smaller" aria-label="Decrease text size">A−</button>
+      <button id="larger" aria-label="Increase text size">A+</button>
+      <button id="close">Close ✕</button>
+    </div>
+    <div class="large-body">
+      <p id="large-source"></p><p id="large-status"></p>
+      <p id="large-translation"></p><p id="large-transliteration"></p><p id="large-english"></p>
+    </div>
+  </dialog>
+</body>
+</html>
