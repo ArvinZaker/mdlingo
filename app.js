@@ -1,6 +1,25 @@
 'use strict';
 
 const $ = id => document.getElementById(id);
+const formatCount = value => value.toLocaleString('en');
+
+// Keep route and action focus accessible without inheriting a keyboard focus ring.
+function focusProgrammatically(element) {
+  if (!element) return;
+  element.classList.add('programmatic-focus');
+  element.addEventListener('blur', () => element.classList.remove('programmatic-focus'), { once: true });
+  element.focus({ preventScroll: true });
+}
+// Text inputs can match :focus-visible after a pointer click; track keyboard use explicitly.
+document.addEventListener('keydown', event => {
+  if (!event.altKey && !event.ctrlKey && !event.metaKey) {
+    document.documentElement.classList.add('keyboard-navigation');
+  }
+});
+document.addEventListener('pointerdown', () => {
+  document.documentElement.classList.remove('keyboard-navigation');
+});
+
 const variants = {
   'ي': 'ی',
   'ى': 'ی',
@@ -124,11 +143,19 @@ function openCard(p, button) {
   $('large-translation').style.fontSize = (size / 16) + 'rem';
   $('large-transliteration').textContent = t.transliteration || '';
   $('large-english').textContent = p.english;
-  $('large-source').replaceChildren(...(p.source_id ? [sourceTag(p.source_id)] : []));
+  const source = data.sources.find(item => item.id === p.source_id);
+  $('large-source').replaceChildren();
+  $('large-source').hidden = !source;
+  if (source) {
+    const pill = document.createElement('span');
+    pill.className = 'source-tag';
+    pill.textContent = source.tag;
+    $('large-source').append(pill);
+  }
   $('large-status').textContent = reviewLabel(t);
   $('large-status').hidden = !reviewLabel(t);
   $('fullscreen').showModal();
-  $('close').focus();
+  focusProgrammatically($('close'));
 }
 
 function card(p, words, searching) {
@@ -149,6 +176,7 @@ function card(p, words, searching) {
   );
   translation.dir = data.languages.find(l => l.code === language).direction;
   translation.lang = language;
+  if (context) button.append(line('context', context));
   button.append(translation);
   if (t.transliteration) {
     button.append(line('transliteration', t.transliteration, words));
@@ -159,7 +187,6 @@ function card(p, words, searching) {
   button.append(line('english-label', 'English'), english);
   const tags = document.createElement('div');
   tags.className = 'tags';
-  if (context) tags.append(line('context', context));
 
   if (t.reviewer?.trim()) {
     const badge = document.createElement('span');
@@ -214,6 +241,10 @@ async function render(focusHeading = false) {
     ++renderVersion;
     await loadQuizLanguage(language);
     renderQuiz();
+    if (focusHeading) {
+      window.scrollTo(0, 0);
+      focusProgrammatically($('page-heading'));
+    }
     return;
   }
   if ($('language-control').parentElement !== $('language-home').parentElement) {
@@ -221,8 +252,6 @@ async function render(focusHeading = false) {
   }
   $('language-control').hidden = false;
   document.querySelector('.language-label').textContent = 'Patient language';
-  $('back').href = '#/';
-  $('back').textContent = '← Home';
   if (state.page === 'search') phraseQuery = state.q;
   const version = ++renderVersion;
   const code = language;
@@ -240,12 +269,14 @@ async function render(focusHeading = false) {
   const changed = currentPage !== pageKey;
   currentPage = pageKey;
   document.querySelector('main').classList.toggle('home', home);
-  $('back').hidden = home;
-  $('search-form').hidden = state.page === 'about';
-  $('language-control').hidden = state.page === 'about';
-  $('page-heading').hidden = home;
+  $('back').hidden = true;
+  const showSearch = ['home', 'search', 'area'].includes(state.page);
+  document.querySelector('.search-tools').hidden = !showSearch;
+  $('search-form').hidden = !showSearch;
+  $('language-control').hidden = !showSearch;
+  $('page-heading').hidden = false;
   if ($('search').value !== phraseQuery) $('search').value = phraseQuery;
-  $('page-heading').textContent = home ? 'Find a phrase' : searching ? 'Search results'
+  $('page-heading').textContent = home ? 'mdlingo' : searching ? 'Search results'
     : state.page === 'about' ? 'About us'
     : state.page === 'sources' ? 'Sources' : state.area?.title || 'Page not found';
   $('results').setAttribute('role', 'region');
@@ -262,7 +293,7 @@ async function render(focusHeading = false) {
       tile.href = '#/area/' + encodeURIComponent(area.id);
       const title = document.createElement('h2');
       title.textContent = area.title;
-      tile.append(title, line('area-count', count ? `${count} phrases` : 'Coming soon'));
+      tile.append(title, line('area-count', count ? `${formatCount(count)} phrases` : 'Coming soon'));
       grid.append(tile);
     }
     fragment.append(grid);
@@ -280,7 +311,7 @@ async function render(focusHeading = false) {
       fragment.append(line('fallback-notice',
         'No mdlingo match. Showing results from other sources.'));
     }
-    $('count').textContent = `${total} phrase${total === 1 ? '' : 's'}${
+    $('count').textContent = `${formatCount(total)} phrase${total === 1 ? '' : 's'}${
       searching && total > 200 ? ' · Showing the first 200. Refine your search to see more.' : ''
     }`;
     const scaffold = data.field_stages[state.area?.id] || data.stages.map(stage => stage.id);
@@ -315,7 +346,10 @@ async function render(focusHeading = false) {
     }
   }
   $('results').replaceChildren(fragment);
-  if (focusHeading && changed && document.activeElement !== $('search')) $('page-heading').focus();
+  if (focusHeading && changed && document.activeElement !== $('search')) {
+    window.scrollTo(0, 0);
+    focusProgrammatically($('page-heading'));
+  }
   if (state.page === 'sources' && state.source) {
     document.getElementById('source-' + state.source)?.scrollIntoView();
   }
@@ -547,7 +581,7 @@ function radialChart(title, entries, id) {
     labelGroups.forEach(g => g.classList.toggle('active', g.members.some(i => members.includes(i))));
     tooltip.textContent = members.map(i => description(wedges[i])).join('; ');
   };
-  const description = w => `${w.name}: ${w.count.toLocaleString()} (${rosePercent(w.percent)})`;
+  const description = w => `${w.name}: ${formatCount(w.count)} (${rosePercent(w.percent)})`;
   const interactive = (element, members) => {
     element.addEventListener('pointerenter', () => show(members));
     element.addEventListener('pointerleave', reset);
@@ -586,7 +620,7 @@ function radialChart(title, entries, id) {
     group.append(name);
     group.append(svgElement('text', {
       x: w.edge, y: w.labelY + 6, class: 'rose-label', 'text-anchor': anchor,
-    }, `${w.count.toLocaleString()} (${rosePercent(w.percent)})`));
+    }, `${formatCount(w.count)} (${rosePercent(w.percent)})`));
     interactive(group, w.members);
     labelGroups.push(group);
     svg.append(group);
@@ -604,7 +638,7 @@ function radialChart(title, entries, id) {
     swatch.style.background = groups[w.index].firstChild.style.fill;
     swatch.setAttribute('aria-hidden', 'true');
     button.append(swatch, line('rose-name', w.name),
-      line('rose-value', `${w.count.toLocaleString()} · ${rosePercent(w.percent)}`));
+      line('rose-value', `${formatCount(w.count)} · ${rosePercent(w.percent)}`));
     interactive(button, [w.index]);
     labelGroups.push(button);
     item.append(button);
@@ -625,7 +659,7 @@ function radialChart(title, entries, id) {
   const body = table.createTBody();
   for (const w of wedges) {
     const row = body.insertRow();
-    for (const value of [w.name, w.count.toLocaleString(), rosePercent(w.percent)]) {
+    for (const value of [w.name, formatCount(w.count), rosePercent(w.percent)]) {
       row.insertCell().textContent = value;
     }
   }
@@ -651,7 +685,7 @@ function sourcesPage() {
     const licence = document.createElement('a');
     licence.href = source.licence_url;
     licence.textContent = source.licence;
-    article.append(title, line('', source.authors), licence, line('', `${source.count} phrases`));
+    article.append(title, line('', source.authors), licence, line('', `${formatCount(source.count)} phrases`));
     article.append(line('', 'Changes: ' + source.change_note));
     section.append(article);
   }
@@ -826,7 +860,7 @@ async function init() {
 }
 
 $('close').addEventListener('click', () => $('fullscreen').close());
-$('fullscreen').addEventListener('close', () => opener?.focus());
+$('fullscreen').addEventListener('close', () => focusProgrammatically(opener));
 for (const [id, delta] of [['smaller', -8], ['larger', 8]]) {
   $(id).addEventListener('click', () => {
     size = Math.max(24, Math.min(144, size + delta));
@@ -915,7 +949,7 @@ function startQuiz() {
   quizQuestion();
   if (route().page === 'quiz-play') {
     renderQuiz();
-    $('quiz-prompt').focus();
+    focusProgrammatically($('quiz-prompt'));
   } else {
     location.hash = '/quiz/play';
   }
@@ -927,7 +961,7 @@ function answerQuiz(index) {
   quizRound.selected = index;
   if (quizRound.choices[index] === quizRound.correct) quizRound.score++;
   renderQuiz();
-  $('quiz-next').focus();
+  focusProgrammatically($('quiz-next'));
 }
 
 function nextQuiz() {
@@ -943,7 +977,7 @@ function nextQuiz() {
     quizQuestion();
   }
   renderQuiz();
-  (quizRound.done ? $('quiz-score') : $('quiz-prompt')).focus();
+  focusProgrammatically(quizRound.done ? $('quiz-score') : $('quiz-prompt'));
 }
 
 function renderQuiz() {
@@ -952,11 +986,10 @@ function renderQuiz() {
   document.querySelector('main').classList.remove('home');
   $('search-form').hidden = true;
   $('count').hidden = true;
-  $('back').hidden = false;
+  $('back').hidden = !playing;
+  document.querySelector('.search-tools').hidden = true;
   $('page-heading').hidden = false;
   $('page-heading').textContent = playing ? 'Quiz round' : 'Quiz';
-  $('back').href = playing ? '#/quiz' : '#/';
-  $('back').textContent = playing ? '← Back to quiz setup' : '← Home';
   // Keep the existing combobox and its listeners alive while rebuilding the quiz.
   if ($('language-control').parentElement !== $('language-home').parentElement) {
     $('language-home').after($('language-control'));
@@ -1040,6 +1073,14 @@ function renderQuiz() {
     section.append(prompt);
     const choices = document.createElement('div');
     choices.className = 'quiz-choices';
+    if (round.answered) {
+      const correct = round.choices[round.selected] === round.correct;
+      const verdict = line('quiz-verdict', correct ? '✓ Correct' : '✗ Incorrect');
+      verdict.dir = 'ltr';
+      verdict.lang = 'en';
+      verdict.setAttribute('role', 'status');
+      section.append(verdict);
+    }
     round.choices.forEach((text, i) => {
       const button = quizButton(`${i + 1}. ${text}`, () => answerQuiz(i));
       button.lang = quizEnglishPrompt ? language : 'en';
@@ -1048,19 +1089,13 @@ function renderQuiz() {
       button.setAttribute('aria-pressed', String(round.answered && i === round.selected));
       if (round.answered && text === round.correct) {
         button.classList.add('correct');
-        button.textContent += ' ✓ Correct';
       }
       if (round.answered && i === round.selected && text !== round.correct) {
         button.classList.add('incorrect');
-        button.textContent += ' ✗ Incorrect';
       }
       choices.append(button);
     });
     section.append(choices);
-    const feedback = line('', round.answered
-      ? (round.choices[round.selected] === round.correct ? 'Correct!' : 'Incorrect. Answer: ' + round.correct) : '');
-    feedback.setAttribute('role', 'status');
-    section.append(feedback);
     if (round.answered) {
       const next = quizButton(round.index === 9 ? 'See results (Enter)' : 'Next (Enter)', nextQuiz);
       next.id = 'quiz-next';
@@ -1143,7 +1178,7 @@ function quizChart() {
     svg.append(point);
   });
   if (rounds.length) svg.append(svgElement('text', { x: 58, y: 240, 'text-anchor': 'middle' }, '1'));
-  if (rounds.length > 1) svg.append(svgElement('text', { x: right - 10, y: 240 }, rounds.length));
+  if (rounds.length > 1) svg.append(svgElement('text', { x: right - 10, y: 240 }, formatCount(rounds.length)));
   svg.append(svgElement('text', { x: width / 2, y: 257, 'text-anchor': 'middle' }, 'Round'));
   section.append(svg, tooltip);
   const wrap = document.createElement('div');
