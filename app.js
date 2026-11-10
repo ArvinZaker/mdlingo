@@ -121,7 +121,7 @@ function openCard(p, button) {
     l => l.code === language
   ).direction;
   $('large-translation').lang = language;
-  $('large-translation').style.fontSize = size + 'px';
+  $('large-translation').style.fontSize = (size / 16) + 'rem';
   $('large-transliteration').textContent = t.transliteration || '';
   $('large-english').textContent = p.english;
   $('large-source').replaceChildren(...(p.source_id ? [sourceTag(p.source_id)] : []));
@@ -422,82 +422,150 @@ function aboutPage() {
   return section;
 }
 
+// Pure geometry and label layout shared with the non-browser checks.
+function roseGeometry(entries, radius) {
+  const sorted = [...entries].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  const total = sorted.reduce((sum, item) => sum + item.count, 0);
+  const step = 2 * Math.PI / sorted.length;
+  return sorted.map((item, index) => {
+    const start = index * step;
+    const end = (index + 1) * step;
+    const r = radius * Math.sqrt(item.count / sorted[0].count);
+    const point = angle => [r * Math.sin(angle), -r * Math.cos(angle)];
+    const [x, y] = point((start + end) / 2);
+    const path = sorted.length === 1
+      ? `M 0 0 L 0 ${-r} A ${r} ${r} 0 1 1 0 ${r} A ${r} ${r} 0 1 1 0 ${-r} Z`
+      : `M 0 0 L ${point(start)} A ${r} ${r} 0 ${step > Math.PI ? 1 : 0} 1 ${point(end)} Z`;
+    return { ...item, index, start, end, r, x, y, path, percent: item.count / total * 100 };
+  });
+}
+
+function roseLabels(wedges) {
+  const labels = wedges.filter(w => w.percent >= 2).map(w => ({ ...w, members: [w.index] }));
+  for (const side of [-1, 1]) {
+    const items = labels.filter(w => (w.x >= 0 ? 1 : -1) === side);
+    items.sort((a, b) => a.y / a.r - b.y / b.r);
+    let previous = -Infinity;
+    for (const w of items) {
+      w.outerX = 205 * w.x / w.r;
+      w.outerY = 205 * w.y / w.r;
+      w.labelY = Math.max(w.outerY, previous + 44);
+      w.edge = side * 235;
+      previous = w.labelY;
+    }
+  }
+  return labels;
+}
+
+function rosePercent(value) {
+  return value > 0 && value < .1 ? '<0.1%' : value.toFixed(1) + '%';
+}
+
 function radialChart(title, entries, id) {
-  entries.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   const section = document.createElement('section');
   section.className = 'radial-chart';
   const heading = document.createElement('h3');
   heading.id = id + '-heading';
   heading.textContent = title;
-  const svg = svgElement('svg', { viewBox: '-320 -320 640 640', role: 'group',
+  const narrow = innerWidth < 600;
+  const width = narrow ? 340 : 1000;
+  const wedges = roseGeometry(entries, narrow ? 145 : 175);
+  const labels = narrow ? [] : roseLabels(wedges);
+  const halfHeight = narrow ? 158 : Math.max(205, ...labels.map(w => Math.abs(w.labelY) + 40));
+  const verticalPoints = wedges.flatMap(w => {
+    const angles = [w.start, w.end, Math.PI, 2 * Math.PI]
+      .filter(angle => angle >= w.start && angle <= w.end);
+    return angles.map(angle => -w.r * Math.cos(angle));
+  });
+  const top = narrow ? Math.min(0, ...verticalPoints) - 12 : -halfHeight;
+  const bottom = narrow ? Math.max(0, ...verticalPoints) + 12 : halfHeight;
+  const svg = svgElement('svg', {
+    viewBox: `${-width / 2} ${top} ${width} ${bottom - top}`, role: 'group',
     'aria-labelledby': heading.id, class: 'radial-svg' });
-  const radius = 78;
-  const maximum = Math.max(...entries.map(item => item.count));
-  const scale = Math.max(1, Math.min(680, $('results').clientWidth)) / 640;
-  const width = Math.max(1, 2 * radius * Math.sin(Math.PI / entries.length) - 2 / scale);
-  const tooltip = document.createElement('p');
+  const tooltip = line('radial-tooltip', 'Hover, tap or focus a wedge for its value and percentage.');
   tooltip.id = id + '-tooltip';
-  tooltip.className = 'radial-tooltip';
   tooltip.setAttribute('role', 'status');
-  tooltip.textContent = 'Hover, tap or focus a bar for its count.';
+  const groups = [];
+  const labelGroups = [];
   const reset = () => {
-    svg.classList.remove('has-active');
-    svg.querySelector('.active')?.classList.remove('active');
-    tooltip.textContent = 'Hover, tap or focus a bar for its count.';
+    section.classList.remove('has-active');
+    [...groups, ...labelGroups].forEach(g => g.classList.remove('active'));
   };
-  const labels = [];
-  const labelSize = Math.max(14, 11 / scale);
-  entries.forEach((item, index) => {
-    const angle = index * 360 / entries.length;
-    const radians = angle * Math.PI / 180;
-    const length = 152 * Math.sqrt(item.count / maximum);
-    const group = svgElement('g', { transform: `rotate(${angle})` });
-    const bar = svgElement('rect', { x: -width / 2, y: -radius - length,
-      width, height: length + width / 2, rx: width / 2, class: 'radial-bar',
-      tabindex: 0, role: 'button', 'aria-label': `${item.name}: ${item.count.toLocaleString()} phrases` });
-    bar.style.transformOrigin = `0px ${-radius}px`;
-    const show = () => {
-      svg.querySelector('.active')?.classList.remove('active');
-      svg.classList.add('has-active');
-      bar.classList.add('active');
-      tooltip.textContent = `${item.name}: ${item.count.toLocaleString()} phrases`;
-    };
-    bar.addEventListener('pointerenter', show);
-    bar.addEventListener('pointerleave', () => { if (document.activeElement !== bar) reset(); });
-    bar.addEventListener('focus', show);
-    bar.addEventListener('blur', reset);
-    bar.addEventListener('click', show);
-    bar.addEventListener('keydown', event => {
-      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); show(); }
+  const show = members => {
+    reset();
+    section.classList.add('has-active');
+    members.forEach(i => groups[i].classList.add('active'));
+    labelGroups.forEach(g => g.classList.toggle('active', g.members.some(i => members.includes(i))));
+    tooltip.textContent = members.map(i => description(wedges[i])).join('; ');
+  };
+  const description = w => `${w.name}: ${w.count.toLocaleString()} (${rosePercent(w.percent)})`;
+  const interactive = (element, members) => {
+    element.addEventListener('pointerenter', () => show(members));
+    element.addEventListener('pointerleave', reset);
+    element.addEventListener('focus', () => show(members));
+    element.addEventListener('blur', reset);
+    element.addEventListener('click', () => show(members));
+    element.addEventListener('keydown', event => {
+      if (['Enter', ' '].includes(event.key)) { event.preventDefault(); show(members); }
       if (event.key === 'Escape') reset();
     });
-    group.append(bar);
+  };
+  for (const w of wedges) {
+    const group = svgElement('g', { class: 'rose-item' });
+    const path = svgElement('path', { d: w.path, class: 'rose-wedge', tabindex: 0, role: 'button',
+      'aria-label': description(w), 'aria-describedby': tooltip.id });
+    const shade = w.index / Math.max(1, wedges.length - 1) * 100;
+    path.style.fill = `color-mix(in srgb, var(--rose-large), var(--rose-small) ${shade}%)`;
+    path.append(svgElement('title', {}, description(w)));
+    interactive(path, [w.index]);
+    group.append(path);
+    groups.push(group);
     svg.append(group);
-    // Keep only labels that fit inside the chart and do not overlap earlier labels.
-    if (index < 6) {
-      const distance = radius + length + 22;
-      const x = Math.sin(radians) * distance;
-      const y = -Math.cos(radians) * distance;
-      const anchor = Math.abs(x) < 10 ? 'middle' : x > 0 ? 'start' : 'end';
-      const textWidth = item.name.length * labelSize * .55;
-      const left = anchor === 'middle' ? x - textWidth / 2 : anchor === 'start' ? x : x - textWidth;
-      const box = { left, right: left + textWidth, top: y - labelSize, bottom: y + 5 };
-      if (box.left > -310 && box.right < 310 && !labels.some(b =>
-        box.left < b.right + 8 && box.right > b.left - 8 && box.top < b.bottom + 8 && box.bottom > b.top - 8)) {
-        labels.push(box);
-        svg.append(svgElement('text', { x, y, 'text-anchor': anchor, class: 'radial-label',
-          'font-size': labelSize }, item.name));
-      }
-    }
-  });
-  svg.append(svgElement('circle', { r: radius, class: 'radial-center' }));
-  const total = entries.reduce((sum, item) => sum + item.count, 0);
-  svg.append(svgElement('text', { y: -2, 'text-anchor': 'middle', class: 'radial-total' }, total.toLocaleString()));
-  svg.append(svgElement('text', { y: 23, 'text-anchor': 'middle', class: 'radial-label' }, 'phrases'));
-  const caption = line('radial-caption', 'Bar length scaled to the square root of the count.');
+  }
+  for (const w of labels) {
+    const group = svgElement('g', { class: 'rose-annotation', tabindex: 0, role: 'button',
+      'aria-label': description(w) });
+    group.members = w.members;
+    const anchor = w.x < 0 ? 'end' : 'start';
+    group.append(svgElement('polyline', { points:
+      `${w.x},${w.y} ${w.outerX},${w.outerY} ${w.edge},${w.labelY + 12}`,
+      class: 'rose-leader' }));
+    group.append(svgElement('circle', { cx: w.x, cy: w.y, r: 2, class: 'rose-dot' }));
+    const name = svgElement('text', {
+      x: w.edge, y: w.labelY - 10, class: 'rose-label', 'text-anchor': anchor,
+      'text-decoration': 'underline' }, w.name);
+    group.append(name);
+    group.append(svgElement('text', {
+      x: w.edge, y: w.labelY + 6, class: 'rose-label', 'text-anchor': anchor,
+    }, `${w.count.toLocaleString()} (${rosePercent(w.percent)})`));
+    interactive(group, w.members);
+    labelGroups.push(group);
+    svg.append(group);
+  }
+  const legend = document.createElement('ol');
+  legend.className = 'rose-legend';
+  for (const w of wedges) {
+    const item = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'rose-legend-item';
+    button.members = [w.index];
+    const swatch = document.createElement('span');
+    swatch.className = 'rose-swatch';
+    swatch.style.background = groups[w.index].firstChild.style.fill;
+    swatch.setAttribute('aria-hidden', 'true');
+    button.append(swatch, line('rose-name', w.name),
+      line('rose-value', `${w.count.toLocaleString()} · ${rosePercent(w.percent)}`));
+    interactive(button, [w.index]);
+    labelGroups.push(button);
+    item.append(button);
+    legend.append(item);
+  }
+  const caption = line('radial-caption', 'Wedge area is proportional to the number of phrases');
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.textContent = 'Show table';
+  toggle.setAttribute('aria-pressed', 'false');
   toggle.setAttribute('aria-expanded', 'false');
   toggle.setAttribute('aria-controls', id + '-table');
   const table = document.createElement('table');
@@ -505,31 +573,26 @@ function radialChart(title, entries, id) {
   table.hidden = true;
   table.createCaption().textContent = title;
   const header = table.createTHead().insertRow();
-  for (const name of ['Category', 'Phrases']) {
+  for (const name of ['Category', 'Value', '%']) {
     const th = document.createElement('th');
     th.scope = 'col';
     th.textContent = name;
     header.append(th);
   }
   const body = table.createTBody();
-  for (const item of entries) {
+  for (const w of wedges) {
     const row = body.insertRow();
-    row.insertCell().textContent = item.name;
-    row.insertCell().textContent = item.count.toLocaleString();
+    for (const value of [w.name, w.count.toLocaleString(), rosePercent(w.percent)]) {
+      row.insertCell().textContent = value;
+    }
   }
   toggle.addEventListener('click', () => {
     table.hidden = !table.hidden;
     toggle.textContent = table.hidden ? 'Show table' : 'Hide table';
     toggle.setAttribute('aria-expanded', String(!table.hidden));
+    toggle.setAttribute('aria-pressed', String(!table.hidden));
   });
-  section.append(heading, svg, tooltip, caption, toggle, table);
-  const observer = new IntersectionObserver(items => {
-    if (items.some(item => item.isIntersecting)) {
-      svg.classList.add('animate');
-      observer.disconnect();
-    }
-  });
-  observer.observe(svg);
+  section.append(heading, svg, legend, tooltip, caption, toggle, table);
   return section;
 }
 
@@ -566,6 +629,25 @@ function closeLanguages() {
   $('language').value = languageLabel(availableLanguages.find(item => item.code === language));
 }
 
+function positionLanguages() {
+  const list = $('language-options');
+  if (list.hidden) return;
+  const input = $('language').getBoundingClientRect();
+  const viewport = window.visualViewport;
+  const top = viewport?.offsetTop || 0;
+  const bottom = top + (viewport?.height || window.innerHeight);
+  const below = bottom - input.bottom - 8;
+  const above = input.top - top - 8;
+  const openAbove = below < 160 && above > below;
+  const height = Math.max(0, Math.min(288, bottom - top - 16, openAbove ? above : below));
+  list.style.width = input.width + 'px';
+  list.style.left = input.left + 'px';
+  list.style.maxHeight = height + 'px';
+  const listHeight = Math.min(list.scrollHeight, height);
+  const preferredTop = openAbove ? input.top - listHeight - 4 : input.bottom + 4;
+  list.style.top = Math.max(top + 4, Math.min(preferredTop, bottom - listHeight - 4)) + 'px';
+}
+
 function highlightLanguage() {
   Array.from($('language-options').children).forEach((option, index) => {
     option.classList.toggle('active', index === activeLanguage);
@@ -597,6 +679,7 @@ function showLanguages(filter = '') {
   $('language-options').hidden = false;
   $('language').setAttribute('aria-expanded', 'true');
   $('language').removeAttribute('aria-activedescendant');
+  positionLanguages();
 }
 
 async function chooseLanguage(item) {
@@ -625,9 +708,25 @@ function setupLanguageCombo() {
     }
   });
   $('language').addEventListener('input', () => showLanguages($('language').value));
-  $('language').addEventListener('blur', closeLanguages);
+  // Touch browsers can blur the input before an option's click arrives.
+  // Close on an outside interaction instead, keeping option taps and scrolling intact.
+  const combo = $('language').closest('.language-combo');
+  document.addEventListener('pointerdown', event => {
+    if (!combo.contains(event.target)) closeLanguages();
+  });
+  document.addEventListener('focusin', event => {
+    if (!combo.contains(event.target)) closeLanguages();
+  });
+  window.addEventListener('resize', positionLanguages);
+  window.addEventListener('scroll', event => {
+    if (event.target !== $('language-options')) positionLanguages();
+  }, true);
+  window.visualViewport?.addEventListener('resize', positionLanguages);
+  window.visualViewport?.addEventListener('scroll', positionLanguages);
   $('language').addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
+    if (event.key === 'Tab') {
+      closeLanguages();
+    } else if (event.key === 'Escape') {
       event.preventDefault();
       closeLanguages();
     } else if (['ArrowDown', 'ArrowUp'].includes(event.key)) {
@@ -648,8 +747,9 @@ const systemTheme = matchMedia('(prefers-color-scheme: dark)');
 function applyTheme() {
   const theme = saved('theme', systemTheme.matches ? 'dark' : 'light');
   document.documentElement.dataset.theme = theme;
-  $('theme').textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
-  $('theme').setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`);
+  $('theme').textContent = `Dark mode: ${theme === 'dark' ? 'On' : 'Off'}`;
+  $('theme').setAttribute('aria-pressed', String(theme === 'dark'));
+  $('theme').setAttribute('aria-label', 'Dark mode');
 }
 $('theme').addEventListener('click', () => {
   remember('theme', document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
@@ -689,7 +789,7 @@ $('fullscreen').addEventListener('close', () => opener?.focus());
 for (const [id, delta] of [['smaller', -8], ['larger', 8]]) {
   $(id).addEventListener('click', () => {
     size = Math.max(24, Math.min(144, size + delta));
-    $('large-translation').style.fontSize = size + 'px';
+    $('large-translation').style.fontSize = (size / 16) + 'rem';
   });
 }
 init().catch(error => {
@@ -700,7 +800,7 @@ let quizArea = '';
 let quizEnglishPrompt = true;
 let quizReviewed = false;
 let quizRound = null;
-let quizAll = false;
+const quizFilters = { specialty: '', language: '', direction: '' };
 let quizTable = false;
 
 function quizHistory() {
@@ -716,6 +816,7 @@ function quizButton(text, action) {
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = text;
+  if (/^(Start|Next|See results|Play again)/.test(text)) button.className = 'primary';
   button.addEventListener('click', action);
   return button;
 }
@@ -849,7 +950,7 @@ function renderQuiz() {
       renderQuiz();
     });
     swap.id = 'quiz-swap';
-    swap.setAttribute('aria-label', 'Swap prompt and answer languages');
+    swap.setAttribute('aria-label', 'Swap languages');
     const control = $('language-control');
     document.querySelector('.language-label').textContent = quizEnglishPrompt ? 'To' : 'From';
     bar.append(...(quizEnglishPrompt ? [english, swap, control] : [control, swap, english]));
@@ -874,7 +975,7 @@ function renderQuiz() {
       section.append(start);
       if (!enough) section.append(line('empty', 'Not enough translated phrases for four distinct choices.'));
     }
-    section.append(quizChart());
+    if (quizHistory().length) section.append(quizChart());
   } else if (quizRound.done) {
     const score = line('quiz-score', `You scored ${quizRound.score} / 10`);
     score.id = 'quiz-score';
@@ -901,8 +1002,15 @@ function renderQuiz() {
       button.lang = quizEnglishPrompt ? language : 'en';
       button.dir = quizEnglishPrompt ? data.languages.find(l => l.code === language).direction : 'ltr';
       button.disabled = round.answered;
-      if (round.answered && text === round.correct) button.classList.add('correct');
-      if (round.answered && i === round.selected && text !== round.correct) button.classList.add('incorrect');
+      button.setAttribute('aria-pressed', String(round.answered && i === round.selected));
+      if (round.answered && text === round.correct) {
+        button.classList.add('correct');
+        button.textContent += ' ✓ Correct';
+      }
+      if (round.answered && i === round.selected && text !== round.correct) {
+        button.classList.add('incorrect');
+        button.textContent += ' ✗ Incorrect';
+      }
       choices.append(button);
     });
     section.append(choices);
@@ -931,25 +1039,31 @@ function quizChart() {
   section.className = 'quiz-history';
   const title = document.createElement('h2');
   title.textContent = 'Quiz accuracy over time';
-  const label = document.createElement('label');
-  label.textContent = 'History filter';
-  const filter = document.createElement('select');
-  filter.id = 'quiz-history-filter';
-  filter.add(new Option('Current specialty, language & direction', 'current'));
-  filter.add(new Option('All', 'all'));
-  filter.value = quizAll ? 'all' : 'current';
-  filter.addEventListener('change', () => {
-    quizAll = filter.value === 'all';
-    renderQuiz();
-  });
-  label.append(filter);
-  section.append(title, label);
-  const rounds = quizHistory().filter(r => quizAll || (r.specialty === quizArea && r.language === language
-    && r.direction === (quizEnglishPrompt ? 'en-to-patient' : 'patient-to-en')));
-  if (!rounds.length) {
-    section.append(line('empty', 'No rounds yet. Finish a quiz to see your accuracy over time.'));
-    return section;
+  const filters = document.createElement('div');
+  filters.className = 'quiz-history-filters';
+  const choices = {
+    specialty: data.fields.map(f => [f.id, f.title]),
+    language: data.languages.map(l => [l.code, l.name]),
+    direction: [['en-to-patient', 'From English'], ['patient-to-en', 'To English']],
+  };
+  for (const key of ['specialty', 'language', 'direction']) {
+    const label = document.createElement('label');
+    label.textContent = key[0].toUpperCase() + key.slice(1);
+    const filter = document.createElement('select');
+    filter.id = 'quiz-history-' + key;
+    filter.add(new Option('All', ''));
+    for (const [value, name] of choices[key]) filter.add(new Option(name, value));
+    filter.value = quizFilters[key];
+    filter.addEventListener('change', () => {
+      quizFilters[key] = filter.value;
+      renderQuiz();
+    });
+    label.append(filter);
+    filters.append(label);
   }
+  section.append(title, filters);
+  const rounds = quizHistory().filter(r => Object.entries(quizFilters)
+    .every(([key, value]) => !value || r[key] === value));
   const width = Math.max(300, $('results').clientWidth);
   const right = width - 18;
   const svg = svgElement('svg', { viewBox: `0 0 ${width} 260`, role: 'group',
@@ -985,7 +1099,7 @@ function quizChart() {
     point.addEventListener('blur', () => { tooltip.hidden = true; });
     svg.append(point);
   });
-  svg.append(svgElement('text', { x: 58, y: 240, 'text-anchor': 'middle' }, '1'));
+  if (rounds.length) svg.append(svgElement('text', { x: 58, y: 240, 'text-anchor': 'middle' }, '1'));
   if (rounds.length > 1) svg.append(svgElement('text', { x: right - 10, y: 240 }, rounds.length));
   svg.append(svgElement('text', { x: width / 2, y: 257, 'text-anchor': 'middle' }, 'Round'));
   section.append(svg, tooltip);
@@ -994,6 +1108,7 @@ function quizChart() {
     renderQuiz();
   });
   toggle.setAttribute('aria-expanded', String(quizTable));
+  toggle.setAttribute('aria-pressed', String(quizTable));
   section.append(toggle);
   if (quizTable) {
     const wrap = document.createElement('div');
@@ -1036,6 +1151,10 @@ window.addEventListener('keydown', event => {
   }
 });
 
+let layoutWidth = innerWidth;
 window.addEventListener('resize', () => {
+  if (layoutWidth === innerWidth) return;
+  layoutWidth = innerWidth;
   if (data && route().page === 'quiz') renderQuiz();
+  if (data && route().page === 'about') render();
 });
