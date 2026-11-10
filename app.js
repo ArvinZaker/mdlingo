@@ -906,8 +906,9 @@ function quizButton(text, action) {
 }
 
 function quizRows() {
+  // Fragments such as 'for one day?' start lowercase and make no sense alone.
   return (translations[language] || []).filter(p => p.field === quizArea && p.translation?.trim()
-    && p.english?.trim() && (!quizReviewed || p.reviewer?.trim()));
+    && p.english?.trim() && !/^[a-z]/.test(p.english.trim()) && (!quizReviewed || p.reviewer?.trim()));
 }
 
 function answerText(p) {
