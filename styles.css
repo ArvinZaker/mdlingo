@@ -1036,7 +1036,7 @@ body:has(dialog[open]) {
 }
 
 /* The tagline belongs to the home page only. */
-main:not(.home) > .intro {
+main:not(.home):not(.searching) > .intro {
   display: none;
 }
 
@@ -1077,7 +1077,7 @@ a.button-link:hover {
   background: var(--hover);
 }
 a.button-link.small {
-  min-height: 36px;
+  min-height: 44px;
   margin-left: .5rem;
   padding: 0 .75rem;
   font-size: .875rem;

@@ -278,6 +278,8 @@ async function render(focusHeading = false) {
   const changed = currentPage !== pageKey;
   currentPage = pageKey;
   document.querySelector('main').classList.toggle('home', home);
+  // Search keeps the home header so the search box does not move while typing.
+  document.querySelector('main').classList.toggle('searching', searching);
   $('back').hidden = true;
   const showSearch = ['home', 'search', 'area'].includes(state.page);
   document.querySelector('.search-tools').hidden = !showSearch;
