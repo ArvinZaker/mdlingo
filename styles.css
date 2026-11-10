@@ -1400,3 +1400,27 @@ input {
     margin-bottom: 1rem;
   }
 }
+
+/* Quiz pages: one column the same width as the rest of the site. */
+main:has(.quiz), main:has(.quiz-history) {
+  max-width: 40rem;
+}
+main:has(.quiz) .search-tools {
+  display: none;
+}
+.quiz select {
+  font-weight: 400;
+}
+.quiz .quiz-check {
+  margin-left: 0;
+  padding-left: 0;
+}
+main:has(.quiz) h1 {
+  margin-top: 1.5rem;
+}
+main:has(.quiz) #back {
+  margin-top: 1rem;
+}
+.quiz .quiz-check input {
+  margin: 0;
+}
