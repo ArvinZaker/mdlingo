@@ -4,21 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#ffffff">
-  <title>MyHealthPhrase</title>
+  <title>mdlingo</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
   <script src="app.js" defer></script>
 </head>
 <body>
+  <nav aria-label="Main"><a href="#/">Home</a><a href="#/quiz">Quiz me</a><a href="#/about">About us</a></nav>
   <button id="theme" type="button">Dark mode</button>
   <main>
-    <h1>MyHealthPhrase</h1>
+    <h1>mdlingo</h1>
     <p class="intro">Find a phrase. Show it to your patient.</p>
+    <div id="language-home"></div>
+    <div id="language-control">
     <label class="language-label" for="language">Patient language</label>
     <div class="language-combo">
       <input id="language" role="combobox" aria-autocomplete="list" aria-expanded="false"
         aria-controls="language-options" autocomplete="off" spellcheck="false">
       <ul id="language-options" role="listbox" aria-label="Patient languages" hidden></ul>
+    </div>
     </div>
     <form id="search-form" role="search">
       <label class="search-label" for="search">Find a question or instruction</label>
@@ -30,9 +34,8 @@
     <div id="results"></div>
   </main>
   <footer>
-    <p>Arvin Zaker · Karanvir Gill · <a href="#/sources">Sources</a></p>
-    <p>Translations are drafts and have not been reviewed.
-      Use a professional interpreter for history, consent and results.</p>
+    <p>Karanvir Gill · Arvin Zaker · Luka Vukovic · <a href="#/sources">Sources</a></p>
+    <p>Use a professional interpreter for history, consent and results.</p>
   </footer>
   <dialog id="fullscreen" aria-labelledby="large-translation">
     <div class="dialog-tools">
