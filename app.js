@@ -136,10 +136,10 @@ function card(p, words, searching) {
   const button = document.createElement('button');
   button.className = 'card-content';
   button.type = 'button';
+  let context;
   if (searching) {
-    const context = data.fields.find(f => f.id === p.field).title + ' / ' +
+    context = data.fields.find(f => f.id === p.field).title + ' / ' +
       data.stages.find(s => s.id === p.stage).title;
-    button.append(line('context', context));
   }
 
   const translation = line(
@@ -153,19 +153,27 @@ function card(p, words, searching) {
   if (t.transliteration) {
     button.append(line('transliteration', t.transliteration, words));
   }
-  button.append(line('english', p.english, words));
+  const english = line('english', p.english, words);
+  english.lang = 'en';
+  english.dir = 'ltr';
+  button.append(line('english-label', 'English'), english);
+  const tags = document.createElement('div');
+  tags.className = 'tags';
+  if (context) tags.append(line('context', context));
 
   if (t.reviewer?.trim()) {
     const badge = document.createElement('span');
     badge.className = 'badge reviewed';
-    badge.textContent = reviewLabel(t);
-    button.append(badge);
+    badge.textContent = '✓ ' + reviewLabel(t);
+    tags.append(badge);
   }
   button.addEventListener('click', () => openCard(p, button));
   const article = document.createElement('article');
   article.className = 'card';
   article.append(button);
-  if (p.source_id) article.append(sourceTag(p.source_id));
+  // Only outside sources get a tag; our own phrases have none.
+  if (p.source_id) tags.append(sourceTag(p.source_id));
+  article.append(tags);
   return article;
 }
 
@@ -208,7 +216,9 @@ async function render(focusHeading = false) {
     renderQuiz();
     return;
   }
-  $('language-home').after($('language-control'));
+  if ($('language-control').parentElement !== $('language-home').parentElement) {
+    $('language-home').after($('language-control'));
+  }
   $('language-control').hidden = false;
   document.querySelector('.language-label').textContent = 'Patient language';
   $('back').href = '#/';
@@ -461,6 +471,45 @@ function rosePercent(value) {
   return value > 0 && value < .1 ? '<0.1%' : value.toFixed(1) + '%';
 }
 
+// Paired views share one selection and support standard tab keyboard navigation.
+function viewTabs(id, label, chart, table, tableSelected = false) {
+  const tabs = document.createElement('div');
+  tabs.className = 'view-tabs';
+  tabs.setAttribute('role', 'tablist');
+  tabs.setAttribute('aria-label', label);
+  const panels = [chart, table];
+  function select(index) {
+    Array.from(tabs.children).forEach((tab, i) => {
+      tab.setAttribute('aria-selected', String(i === index));
+      tab.tabIndex = i === index ? 0 : -1;
+      panels[i].hidden = i !== index;
+    });
+    if (id === 'quiz-history') quizTable = index === 1;
+  }
+  ['Chart', 'Table'].forEach((name, i) => {
+    const tab = document.createElement('button');
+    tab.type = 'button';
+    tab.textContent = name;
+    tab.id = `${id}-tab-${i}`;
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-controls', `${id}-panel-${i}`);
+    panels[i].id = `${id}-panel-${i}`;
+    panels[i].setAttribute('role', 'tabpanel');
+    panels[i].setAttribute('aria-labelledby', tab.id);
+    tab.addEventListener('click', () => select(i));
+    tab.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : 1 - i;
+      select(next);
+      tabs.children[next].focus({ preventScroll: true });
+    });
+    tabs.append(tab);
+  });
+  select(Number(tableSelected));
+  return tabs;
+}
+
 function radialChart(title, entries, id) {
   const section = document.createElement('section');
   section.className = 'radial-chart';
@@ -562,12 +611,6 @@ function radialChart(title, entries, id) {
     legend.append(item);
   }
   const caption = line('radial-caption', 'Wedge area is proportional to the number of phrases');
-  const toggle = document.createElement('button');
-  toggle.type = 'button';
-  toggle.textContent = 'Show table';
-  toggle.setAttribute('aria-pressed', 'false');
-  toggle.setAttribute('aria-expanded', 'false');
-  toggle.setAttribute('aria-controls', id + '-table');
   const table = document.createElement('table');
   table.id = id + '-table';
   table.hidden = true;
@@ -586,13 +629,10 @@ function radialChart(title, entries, id) {
       row.insertCell().textContent = value;
     }
   }
-  toggle.addEventListener('click', () => {
-    table.hidden = !table.hidden;
-    toggle.textContent = table.hidden ? 'Show table' : 'Hide table';
-    toggle.setAttribute('aria-expanded', String(!table.hidden));
-    toggle.setAttribute('aria-pressed', String(!table.hidden));
-  });
-  section.append(heading, svg, legend, tooltip, caption, toggle, table);
+  const chart = document.createElement('div');
+  chart.append(svg, legend, tooltip, caption);
+  const tabs = viewTabs(id, title, chart, table);
+  section.append(heading, tabs, chart, table);
   return section;
 }
 
@@ -655,7 +695,8 @@ function highlightLanguage() {
   const option = $('language-options').children[activeLanguage];
   if (option) {
     $('language').setAttribute('aria-activedescendant', option.id);
-    option.scrollIntoView({ block: 'nearest' });
+    const list = $('language-options');
+    list.scrollTop = Math.max(0, option.offsetTop - list.clientHeight + option.offsetHeight);
   } else {
     $('language').removeAttribute('aria-activedescendant');
   }
@@ -747,9 +788,10 @@ const systemTheme = matchMedia('(prefers-color-scheme: dark)');
 function applyTheme() {
   const theme = saved('theme', systemTheme.matches ? 'dark' : 'light');
   document.documentElement.dataset.theme = theme;
-  $('theme').textContent = `Dark mode: ${theme === 'dark' ? 'On' : 'Off'}`;
+  const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+  $('theme').title = label;
   $('theme').setAttribute('aria-pressed', String(theme === 'dark'));
-  $('theme').setAttribute('aria-label', 'Dark mode');
+  $('theme').setAttribute('aria-label', label);
 }
 $('theme').addEventListener('click', () => {
   remember('theme', document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
@@ -777,7 +819,6 @@ async function init() {
   $('search-form').addEventListener('submit', event => {
     event.preventDefault();
     search(true);
-    $('page-heading').focus();
   });
   window.addEventListener('hashchange', () => render(true));
   window.addEventListener('popstate', () => render(true));
@@ -917,7 +958,9 @@ function renderQuiz() {
   $('back').href = playing ? '#/quiz' : '#/';
   $('back').textContent = playing ? '← Back to quiz setup' : '← Home';
   // Keep the existing combobox and its listeners alive while rebuilding the quiz.
-  $('language-home').after($('language-control'));
+  if ($('language-control').parentElement !== $('language-home').parentElement) {
+    $('language-home').after($('language-control'));
+  }
   const section = document.createElement('section');
   section.className = 'quiz';
   $('language-control').hidden = playing;
@@ -1103,16 +1146,12 @@ function quizChart() {
   if (rounds.length > 1) svg.append(svgElement('text', { x: right - 10, y: 240 }, rounds.length));
   svg.append(svgElement('text', { x: width / 2, y: 257, 'text-anchor': 'middle' }, 'Round'));
   section.append(svg, tooltip);
-  const toggle = quizButton(quizTable ? 'Hide table' : 'Show table', () => {
-    quizTable = !quizTable;
-    renderQuiz();
-  });
-  toggle.setAttribute('aria-expanded', String(quizTable));
-  toggle.setAttribute('aria-pressed', String(quizTable));
-  section.append(toggle);
-  if (quizTable) {
-    const wrap = document.createElement('div');
-    wrap.className = 'quiz-table-wrap';
+  const wrap = document.createElement('div');
+  wrap.className = 'quiz-table-wrap';
+  const chart = document.createElement('div');
+  chart.append(svg, tooltip);
+  section.append(viewTabs('quiz-history', 'Quiz history view', chart, wrap, quizTable), chart, wrap);
+  {
     const table = document.createElement('table');
     const caption = table.createCaption();
     caption.textContent = 'Quiz accuracy over time — same rounds as the chart';

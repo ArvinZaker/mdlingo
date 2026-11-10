@@ -1229,3 +1229,174 @@ nav {
 .quiz-history-filters select {
   width: 100%;
 }
+
+/* Stable search controls and phrasebook entries. */
+html {
+  scrollbar-gutter: stable;
+  overflow-anchor: none;
+}
+body {
+  display: block;
+}
+.app-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 68px;
+  padding: .5rem 1.25rem;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+.app-nav nav {
+  padding: 0;
+}
+#theme {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+}
+main, main.home {
+  max-width: 72rem;
+}
+main:has(.quiz), main:has(.sources), main:has(.about) {
+  max-width: 65rem;
+}
+.search-tools {
+  max-width: 40rem;
+  margin: 1rem auto 0;
+  padding: .75rem 0;
+  background: var(--background);
+}
+.search-tools .language-label, .search-label {
+  margin: 0 0 .25rem;
+  text-align: start;
+  font-size: .875rem;
+}
+.search-tools .language-combo {
+  margin: 0 0 .5rem;
+}
+input {
+  font-size: max(16px, 1rem);
+}
+.cards {
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  align-items: stretch;
+}
+.card-content, .card-content:hover:not(:disabled), .card-content:active:not(:disabled) {
+  background: transparent;
+}
+.translation {
+  margin: 0 0 .75rem;
+}
+.english-label {
+  margin: .25rem 0;
+  font-size: .8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+.english {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text);
+  margin: 0 0 1rem;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  margin-top: auto;
+  padding-top: .5rem;
+}
+.tags .badge, .tags .source-tag, .tags .context {
+  display: inline-flex;
+  align-items: center;
+  align-self: auto;
+  min-height: 0;
+  margin: 0;
+  padding: .2rem .65rem;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background: var(--hover);
+  color: var(--text);
+  font-size: .8rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.tags .reviewed {
+  background: var(--status-correct);
+}
+.tags a.source-tag {
+  position: relative;
+  text-decoration: none;
+}
+/* Keep a 44px tap area without making the pill look tall. */
+.tags a.source-tag::after {
+  content: '';
+  position: absolute;
+  inset: -.6rem 0;
+}
+.tags a.source-tag:hover {
+  border-color: var(--text);
+}
+.view-tabs {
+  display: inline-flex;
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.view-tabs button {
+  min-width: 6rem;
+  border: 0;
+  border-radius: 0;
+}
+.view-tabs button[aria-selected="true"] {
+  color: var(--primary-text);
+  background: var(--primary);
+}
+.view-tabs button:focus-visible {
+  outline-offset: -4px;
+}
+@media (max-width: 600px) {
+  .app-nav {
+    padding: .5rem .75rem;
+    flex-direction: row;
+    gap: .5rem;
+  }
+  .app-nav nav {
+    gap: .75rem;
+    font-size: .875rem;
+  }
+  .search-tools {
+    position: sticky;
+    top: 68px;
+    z-index: 20;
+    padding: .5rem 0;
+  }
+  .cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  main, main.home {
+    display: flex;
+    flex-direction: column;
+    padding-top: 0;
+  }
+  .search-tools {
+    order: -1;
+    flex-shrink: 0;
+    width: 100%;
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+}
