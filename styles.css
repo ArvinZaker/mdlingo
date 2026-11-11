@@ -1091,3 +1091,12 @@ a.button-link.small {
   height: 44px;
   line-height: 1;
 }
+
+.review-banner {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  background: var(--highlight);
+  color: var(--text);
+  text-align: center;
+  font-weight: 600;
+}

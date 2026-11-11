@@ -464,7 +464,7 @@ function aboutPage() {
   const section = document.createElement('section');
   section.className = 'about';
   section.append(line('', 'Find a phrase and show it to your patient. '
-    + 'mdlingo was built by Karanvir Gill, Arvin Zaker and Luka Vukovic.'));
+    + 'mdlingo was built by Karanvir Gill and Arvin Zaker.'));
   const languages = availableLanguages.map(item => ({
     name: item.name,
     count: data.fields.reduce((total, field) => total + areaCount(field.id, item.code), 0),
