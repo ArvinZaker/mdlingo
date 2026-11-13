@@ -2,6 +2,13 @@
 
 const $ = id => document.getElementById(id);
 const formatCount = value => value.toLocaleString('en');
+const authorNames = [
+  'Dr. Karanvir Gill',
+  'Arvin Zaker',
+  'Dr. Bipandeep Singh Biran',
+  'Dr. Arshbir Aulakh',
+];
+$('footer-authors').textContent = authorNames.join(' · ');
 
 // Keep route and action focus accessible without inheriting a keyboard focus ring.
 function focusProgrammatically(element) {
@@ -474,12 +481,6 @@ function aboutPage() {
     radialChart('Phrases per specialty', specialties, 'specialty'));
   const authors = document.createElement('h3');
   authors.textContent = 'Authors';
-  const authorNames = [
-    'Dr. Karanvir Gill',
-    'Arvin Zaker',
-    'Dr. Bipandeep Singh Biran',
-    'Dr. Arshbir Aulakh',
-  ];
   const authorList = document.createElement('ul');
   authorList.className = 'authors';
   for (const name of authorNames) {
