@@ -376,9 +376,7 @@ function search(submitted = false) {
 }
 
 function areaCount(id, code) {
-  return (data.own_counts[code]?.[id] || 0) + data.sources.reduce(
-    (total, source) => total + (source.counts[code]?.[id] || 0), 0
-  );
+  return data.own_counts[code]?.[id] || 0;
 }
 
 function availableAreas(code) {
@@ -465,9 +463,10 @@ function aboutPage() {
   section.className = 'about';
   section.append(line('', 'Find a phrase and show it to your patient. '
     + 'mdlingo was built by Karanvir Gill and Arvin Zaker.'));
+  section.append(line('', `mdlingo also keeps the Medical Questionnaire (${formatCount(data.sources[0].count)} phrases) as a backup. It is used only when a search finds no mdlingo match.`));
   const languages = availableLanguages.map(item => ({
     name: item.name,
-    count: data.fields.reduce((total, field) => total + areaCount(field.id, item.code), 0),
+    count: data.fields.reduce((total, field) => total + (data.own_counts[item.code]?.[field.id] || 0), 0),
   }));
   const specialties = data.fields.map(item => ({
     name: item.title, count: data.specialty_counts[item.id] || 0,
@@ -851,8 +850,8 @@ async function init() {
   data = await response.json();
 
   availableLanguages = data.languages.filter(item => {
-    const counts = [data.own_counts[item.code], ...data.sources.map(source => source.counts[item.code])];
-    return counts.some(count => count && Object.values(count).some(value => value > 0));
+    const counts = data.own_counts[item.code];
+    return counts && Object.values(counts).some(value => value > 0);
   }).sort((a, b) => a.name.localeCompare(b.name, 'en'));
   language = saved('language', availableLanguages[0].code);
   if (!availableLanguages.some(item => item.code === language)) language = availableLanguages[0].code;
