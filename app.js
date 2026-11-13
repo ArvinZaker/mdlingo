@@ -464,6 +464,7 @@ function aboutPage() {
   section.append(line('', 'Find a phrase and show it to your patient. '
     + 'mdlingo was built by Karanvir Gill and Arvin Zaker.'));
   section.append(line('', `mdlingo also keeps the Medical Questionnaire (${formatCount(data.sources[0].count)} phrases) as a backup. It is used only when a search finds no mdlingo match.`));
+  section.append(sourceArticle(data.sources[0]));
   const languages = availableLanguages.map(item => ({
     name: item.name,
     count: data.fields.reduce((total, field) => total + (data.own_counts[item.code]?.[field.id] || 0), 0),
@@ -681,24 +682,27 @@ function radialChart(title, entries, id) {
   return section;
 }
 
+function sourceArticle(source) {
+  const article = document.createElement('article');
+  article.id = 'source-' + source.id;
+  const title = document.createElement('h2');
+  const link = document.createElement('a');
+  link.href = source.url;
+  link.textContent = source.title;
+  title.append(link);
+  const licence = document.createElement('a');
+  licence.href = source.licence_url;
+  licence.textContent = source.licence;
+  article.append(title, line('', source.authors), licence, line('', `${formatCount(source.count)} phrases`));
+  article.append(line('', 'Changes: ' + source.change_note));
+  return article;
+}
+
 function sourcesPage() {
   const section = document.createElement('section');
   section.className = 'sources';
-  const sources = data.sources;
-  for (const source of sources) {
-    const article = document.createElement('article');
-    article.id = 'source-' + source.id;
-    const title = document.createElement('h2');
-    const link = document.createElement('a');
-    link.href = source.url;
-    link.textContent = source.title;
-    title.append(link);
-    const licence = document.createElement('a');
-    licence.href = source.licence_url;
-    licence.textContent = source.licence;
-    article.append(title, line('', source.authors), licence, line('', `${formatCount(source.count)} phrases`));
-    article.append(line('', 'Changes: ' + source.change_note));
-    section.append(article);
+  for (const source of data.sources) {
+    section.append(sourceArticle(source));
   }
   return section;
 }
