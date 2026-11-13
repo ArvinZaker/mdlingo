@@ -585,9 +585,6 @@ function radialChart(title, entries, id) {
   const svg = svgElement('svg', {
     viewBox: `${-width / 2} ${top} ${width} ${bottom - top}`, role: 'group',
     'aria-labelledby': heading.id, class: 'radial-svg' });
-  const tooltip = line('radial-tooltip', 'Hover, tap or focus a wedge for its value and percentage.');
-  tooltip.id = id + '-tooltip';
-  tooltip.setAttribute('role', 'status');
   const groups = [];
   const labelGroups = [];
   const reset = () => {
@@ -599,7 +596,6 @@ function radialChart(title, entries, id) {
     section.classList.add('has-active');
     members.forEach(i => groups[i].classList.add('active'));
     labelGroups.forEach(g => g.classList.toggle('active', g.members.some(i => members.includes(i))));
-    tooltip.textContent = members.map(i => description(wedges[i])).join('; ');
   };
   const description = w => `${w.name}: ${formatCount(w.count)} (${rosePercent(w.percent)})`;
   const interactive = (element, members) => {
@@ -616,7 +612,7 @@ function radialChart(title, entries, id) {
   for (const w of wedges) {
     const group = svgElement('g', { class: 'rose-item' });
     const path = svgElement('path', { d: w.path, class: 'rose-wedge', tabindex: 0, role: 'button',
-      'aria-label': description(w), 'aria-describedby': tooltip.id });
+      'aria-label': description(w) });
     path.style.fill = `var(--chart-${w.color})`;
     path.append(svgElement('title', {}, description(w)));
     interactive(path, [w.index]);
@@ -663,7 +659,6 @@ function radialChart(title, entries, id) {
     item.append(button);
     legend.append(item);
   }
-  const caption = line('radial-caption', 'Wedge area is proportional to the number of phrases');
   const table = document.createElement('table');
   table.id = id + '-table';
   table.hidden = true;
@@ -683,7 +678,7 @@ function radialChart(title, entries, id) {
     }
   }
   const chart = document.createElement('div');
-  chart.append(svg, legend, tooltip, caption);
+  chart.append(svg, legend);
   const tabs = viewTabs(id, title, chart, table);
   section.append(heading, tabs, chart, table);
   return section;

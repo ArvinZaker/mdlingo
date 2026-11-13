@@ -974,16 +974,6 @@ body:has(dialog[open]) {
   stroke-width: 2;
 }
 
-.radial-tooltip {
-  min-height: 3.2em;
-  margin: .5rem auto;
-}
-
-.radial-caption {
-  color: var(--muted);
-  font-size: .875rem;
-}
-
 .rose-legend {
   list-style: none;
   padding: 0;
