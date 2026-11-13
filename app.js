@@ -477,8 +477,8 @@ function aboutPage() {
   const authorNames = [
     'Karanvir Gill',
     'Arvin Zaker',
-    'Dr. Bipandeep Singh Biran, R1 Orthopaedic Surgery, UBC',
-    'Dr. Arshbir Aulakh, R1 Otolaryngology–Head and Neck Surgery, UBC',
+    'Dr. Bipandeep Singh Biran',
+    'Dr. Arshbir Aulakh',
   ];
   const authorList = document.createElement('ul');
   authorList.className = 'authors';

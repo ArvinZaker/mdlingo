@@ -6,7 +6,7 @@ We made mdlingo so clinicians can learn simple instructions and questions in the
 
 - Karanvir Gill
 - Arvin Zaker
-- Dr. Bipandeep Singh Biran, R1 Orthopaedic Surgery, UBC
-- Dr. Arshbir Aulakh, R1 Otolaryngology–Head and Neck Surgery, UBC
+- Dr. Bipandeep Singh Biran
+- Dr. Arshbir Aulakh
 
 https://arvinzaker.github.io/mdlingo/
