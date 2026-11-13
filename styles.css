@@ -277,7 +277,7 @@ main {
 }
 
 main > :not(#results), #results > :not(.areas):not(.cards):not(.about),
-.about > p, .about > h3, .about > .sources,
+.about > p, .about > h3, .about > .sources, .about > .authors,
 .radial-chart > h3, .radial-chart > .view-tabs {
   width: 100%;
   max-width: var(--column);
@@ -919,6 +919,12 @@ body:has(dialog[open]) {
 
 /* Preserve the existing chart rendering and paired chart/table interaction. */
 .about > p {
+  text-align: center;
+}
+
+.authors {
+  list-style: none;
+  padding: 0;
   text-align: center;
 }
 

@@ -474,12 +474,25 @@ function aboutPage() {
     radialChart('Phrases per specialty', specialties, 'specialty'));
   const authors = document.createElement('h3');
   authors.textContent = 'Authors';
+  const authorNames = [
+    'Karanvir Gill',
+    'Arvin Zaker',
+    'Dr. Bipandeep Singh Biran, R1 Orthopaedic Surgery, UBC',
+    'Dr. Arshbir Aulakh, R1 Otolaryngology–Head and Neck Surgery, UBC',
+  ];
+  const authorList = document.createElement('ul');
+  authorList.className = 'authors';
+  for (const name of authorNames) {
+    const author = document.createElement('li');
+    author.textContent = name;
+    authorList.append(author);
+  }
   const sourcesHeading = document.createElement('h3');
   sourcesHeading.textContent = 'Sources';
   const sources = document.createElement('div');
   sources.className = 'sources';
   sources.append(sourceArticle(data.sources[0]));
-  section.append(authors, line('', 'Karanvir Gill and Arvin Zaker'), sourcesHeading,
+  section.append(authors, authorList, sourcesHeading,
     line('', `mdlingo also keeps the Medical Questionnaire (${formatCount(data.sources[0].count)} phrases) as a backup. It is used only when a search finds no mdlingo match.`), sources);
   return section;
 }
