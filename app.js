@@ -475,7 +475,7 @@ function aboutPage() {
   const authors = document.createElement('h3');
   authors.textContent = 'Authors';
   const authorNames = [
-    'Karanvir Gill',
+    'Dr. Karanvir Gill',
     'Arvin Zaker',
     'Dr. Bipandeep Singh Biran',
     'Dr. Arshbir Aulakh',

@@ -4,7 +4,7 @@ We made mdlingo so clinicians can learn simple instructions and questions in the
 
 ## Authors
 
-- Karanvir Gill
+- Dr. Karanvir Gill
 - Arvin Zaker
 - Dr. Bipandeep Singh Biran
 - Dr. Arshbir Aulakh
