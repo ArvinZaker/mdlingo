@@ -3,52 +3,87 @@
   font: 1rem/1.6 system-ui, 'Noto Sans', 'Segoe UI', Roboto,
     'Noto Naskh Arabic', 'Noto Sans Gurmukhi', sans-serif;
   font-synthesis: none;
-  --background: #fff;
-  --surface: #fff;
-  --text: #202124;
-  --muted: #4c6057;
-  --border: #66766e;
-  --link: #2457a6;
-  --primary: #2457a6;
-  --primary-text: #fff;
-  --hover: #e1eaf6;
-  --pressed: #cad9ee;
-  --focus: #804600;
-  --highlight: #ffe69a;
-  --status-correct: #e0f2e7;
-  --status-incorrect: #fce5df;
-  --correct-border: #23744b;
-  --incorrect-border: #a53631;
-  --chart-line: #2457a6;
-  --chart-grid: #e0e5e9;
-  --rose-large: #164a80;
-  --rose-small: #9dc8ed;
+  --background: #faf0e2;
+  --surface: #fff8ed;
+  --text: #42291f;
+  --muted: #715043;
+  --border: #9c7865;
+  --link: #9b3f28;
+  --primary: #9b3f28;
+  --primary-text: #ffffff;
+  --hover: #f3dfcc;
+  --pressed: #e9c8ad;
+  --focus: #754000;
+  --highlight: #f5d486;
+  --status-correct: #e0efda;
+  --status-incorrect: #f7ddd3;
+  --correct-border: #3c6532;
+  --incorrect-border: #9b3028;
+  --chart-line: #9b3f28;
+  --chart-grid: #e3cbb6;
+  --rose-large: #aa482f;
+  --rose-small: #e7ad81;
   --column: 40rem;
   --wide: 69.5rem;
+  --card-radius: 1.5rem;
+  --card-padding: 1.5rem;
+  --card-shadow: 0 8px 24px #713d2520;
+  font-family: Georgia, serif;
+  --chart-1: #aa482f;
+  --chart-2: #b45e44;
+  --chart-3: #be745a;
+  --chart-4: #c88a6f;
+  --chart-5: #d1a085;
+  --chart-6: #dbb69a;
+  --chart-7: #e5ccaf;
+  --chart-8: #d9ceb3;
+  --chart-9: #b8bba6;
+  --chart-10: #97a898;
+  --chart-11: #76958b;
+  --chart-12: #54827d;
+  --chart-13: #336f70;
+  --chart-14: #125c62;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --background: #151b20;
-  --surface: #202a32;
-  --text: #f0f3f5;
-  --muted: #bdccc5;
-  --border: #a4b8ad;
-  --link: #a6caff;
-  --primary: #a6caff;
-  --primary-text: #151b20;
-  --hover: #2b3b46;
-  --pressed: #354853;
-  --focus: #ffd08a;
-  --highlight: #584619;
-  --status-correct: #163d2b;
-  --status-incorrect: #482927;
-  --correct-border: #83d9a3;
-  --incorrect-border: #edaaa2;
-  --chart-line: #90bfff;
-  --chart-grid: #35424c;
-  --rose-large: #3579ad;
-  --rose-small: #c0e0fa;
+  --background: #21171c;
+  --surface: #302228;
+  --text: #faeadd;
+  --muted: #ceb1a2;
+  --border: #aa8371;
+  --link: #f2a183;
+  --primary: #f2a183;
+  --primary-text: #21171c;
+  --hover: #473039;
+  --pressed: #593c43;
+  --focus: #f5d486;
+  --highlight: #60472b;
+  --status-correct: #2b4030;
+  --status-incorrect: #55302e;
+  --correct-border: #a5c48b;
+  --incorrect-border: #f2a183;
+  --chart-line: #f2a183;
+  --chart-grid: #654b45;
+  --rose-large: #ed9678;
+  --rose-small: #8b6555;
+  --card-radius: 1.5rem;
+  --card-padding: 1.5rem;
+  --card-shadow: 0 8px 24px #10090d66;
+  --chart-1: #ed9678;
+  --chart-2: #e99d7f;
+  --chart-3: #e6a386;
+  --chart-4: #e2aa8c;
+  --chart-5: #dfb093;
+  --chart-6: #dbb79a;
+  --chart-7: #d8bea1;
+  --chart-8: #c7b99f;
+  --chart-9: #a9aa95;
+  --chart-10: #8b9a8b;
+  --chart-11: #6c8b80;
+  --chart-12: #4e7b76;
+  --chart-13: #306c6c;
+  --chart-14: #125c62;
 }
 
 * {
@@ -341,9 +376,10 @@ main > :not(#results), #results > :not(.areas):not(.cards):not(.about),
   justify-content: center;
   min-width: 0;
   min-height: 8rem;
-  padding: 1rem .75rem;
+  padding: var(--card-padding);
   border: 1px solid var(--border);
-  border-radius: .75rem;
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
   color: var(--text);
   background: var(--surface);
   text-decoration: none;
@@ -373,9 +409,10 @@ main > :not(#results), #results > :not(.areas):not(.cards):not(.about),
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 1.5rem;
+  padding: var(--card-padding);
   border: 1px solid var(--border);
-  border-radius: .75rem;
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
   background: var(--surface);
   text-align: start;
 }
@@ -858,6 +895,10 @@ body:has(dialog[open]) {
 }
 
 .rose-wedge {
+  stroke: var(--surface);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
   cursor: pointer;
   transform-origin: 0 0;
 }
@@ -998,7 +1039,11 @@ body:has(dialog[open]) {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .card, .sources article {
+  .card {
+    padding: var(--card-padding);
+  }
+
+  .sources article {
     padding: 1.25rem;
   }
 

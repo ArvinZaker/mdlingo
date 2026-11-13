@@ -165,7 +165,7 @@ function phraseContext(p) {
   return [field, stage].filter(Boolean).join(' / ');
 }
 
-function card(p, words) {
+function card(p, words, state) {
   const t = p;
   const button = document.createElement('button');
   button.className = 'card-content';
@@ -187,7 +187,7 @@ function card(p, words) {
   if (t.transliteration) {
     button.append(line('transliteration', t.transliteration, words));
   }
-  button.append(line('context', phraseContext(p)));
+  if (state.page === 'search') button.append(line('context', phraseContext(p)));
   const tags = document.createElement('div');
   tags.className = 'tags';
 
@@ -343,7 +343,7 @@ async function render(focusHeading = false) {
       more.className = 'show-more';
       more.textContent = 'Show more';
       const appendBatch = () => {
-        for (const p of phrases.slice(shown, shown + 200)) grid.append(card(p, words));
+        for (const p of phrases.slice(shown, shown + 200)) grid.append(card(p, words, state));
         shown += 200;
         more.hidden = shown >= phrases.length;
       };
@@ -478,6 +478,8 @@ function aboutPage() {
 
 // Pure geometry and label layout shared with the non-browser checks.
 function roseGeometry(entries, radius) {
+  const names = entries.map(item => item.name).sort();
+  const slots = [6, 11, 7, 1, 14, 2, 13, 9, 4, 12, 5, 3, 10, 8];
   const sorted = [...entries].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   const total = sorted.reduce((sum, item) => sum + item.count, 0);
   const step = 2 * Math.PI / sorted.length;
@@ -490,7 +492,7 @@ function roseGeometry(entries, radius) {
     const path = sorted.length === 1
       ? `M 0 0 L 0 ${-r} A ${r} ${r} 0 1 1 0 ${r} A ${r} ${r} 0 1 1 0 ${-r} Z`
       : `M 0 0 L ${point(start)} A ${r} ${r} 0 ${step > Math.PI ? 1 : 0} 1 ${point(end)} Z`;
-    return { ...item, index, start, end, r, x, y, path, percent: item.count / total * 100 };
+    return { ...item, color: slots[names.indexOf(item.name)], index, start, end, r, x, y, path, percent: item.count / total * 100 };
   });
 }
 
@@ -607,8 +609,7 @@ function radialChart(title, entries, id) {
     const group = svgElement('g', { class: 'rose-item' });
     const path = svgElement('path', { d: w.path, class: 'rose-wedge', tabindex: 0, role: 'button',
       'aria-label': description(w), 'aria-describedby': tooltip.id });
-    const shade = w.index / Math.max(1, wedges.length - 1) * 100;
-    path.style.fill = `color-mix(in srgb, var(--rose-large), var(--rose-small) ${shade}%)`;
+    path.style.fill = `var(--chart-${w.color})`;
     path.append(svgElement('title', {}, description(w)));
     interactive(path, [w.index]);
     group.append(path);
