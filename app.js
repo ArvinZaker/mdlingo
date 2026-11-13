@@ -938,7 +938,9 @@ function quizQuestion() {
   const correct = answerText(phrase);
   const words = new Set(normalize(correct).split(/[^\p{L}\p{N}]+/u).filter(Boolean));
   const seen = new Set([normalize(correct)]);
+  round.choicePhrases = new Map([[correct, phrase]]);
   const candidates = quizRows().map(p => ({
+    phrase: p,
     text: answerText(p),
     stage: Number(p.stage === phrase.stage),
     overlap: [...new Set(normalize(answerText(p)).split(/[^\p{L}\p{N}]+/u))]
@@ -951,6 +953,7 @@ function quizQuestion() {
     if (seen.has(key)) continue;
     seen.add(key);
     wrong.push(candidate.text);
+    round.choicePhrases.set(candidate.text, candidate.phrase);
     if (wrong.length === 3) break;
   }
   round.choices = shuffled([correct, ...wrong]);
@@ -1089,6 +1092,11 @@ function renderQuiz() {
     prompt.lang = quizEnglishPrompt ? 'en' : language;
     prompt.dir = quizEnglishPrompt ? 'ltr' : data.languages.find(l => l.code === language).direction;
     section.append(prompt);
+    if (!quizEnglishPrompt && phrase.transliteration) {
+      const pronunciation = line('transliteration', phrase.transliteration);
+      pronunciation.dir = 'ltr';
+      section.append(pronunciation);
+    }
     const choices = document.createElement('div');
     choices.className = 'quiz-choices';
     if (round.answered) {
@@ -1103,6 +1111,12 @@ function renderQuiz() {
       const button = quizButton(`${i + 1}. ${text}`, () => answerQuiz(i));
       button.lang = quizEnglishPrompt ? language : 'en';
       button.dir = quizEnglishPrompt ? data.languages.find(l => l.code === language).direction : 'ltr';
+      const choice = round.choicePhrases.get(text);
+      if (quizEnglishPrompt && choice?.transliteration) {
+        const pronunciation = line('transliteration', choice.transliteration);
+        pronunciation.dir = 'ltr';
+        button.append(pronunciation);
+      }
       button.disabled = round.answered;
       button.setAttribute('aria-pressed', String(round.answered && i === round.selected));
       if (round.answered && text === round.correct) {

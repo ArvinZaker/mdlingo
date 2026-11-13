@@ -785,6 +785,16 @@ body:has(dialog[open]) {
   border-width: 2px;
 }
 
+.quiz .transliteration {
+  direction: ltr;
+  text-align: start;
+  font-size: 1rem;
+}
+
+.quiz-choices .transliteration {
+  margin: .35rem 0 0;
+}
+
 .quiz-choices .correct {
   border-color: var(--correct-border);
   background: var(--status-correct);
