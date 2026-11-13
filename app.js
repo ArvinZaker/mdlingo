@@ -469,7 +469,7 @@ function aboutPage() {
     name: item.title, count: data.specialty_counts[item.id] || 0,
   })).filter(item => item.count);
   const phrases = Object.values(data.specialty_counts).reduce((total, count) => total + count, 0);
-  section.append(line('', `We made mdlingo so a clinician can give a patient simple instructions and questions in their own language without waiting for an interpreter. Search for what you need to say, show the translation on the screen, and read the pronunciation aloud. It has ${formatCount(phrases)} phrases across ${formatCount(specialties.length)} specialties in ${formatCount(availableLanguages.length)} languages, and each translation comes with a pronunciation spelled the way an English speaker would read it.`));
+  section.append(line('', `We made mdlingo so clinicians can learn simple instructions and questions in their patients' languages, and use them without waiting for an interpreter. Search a phrase, show the translation on the screen, and use the pronunciation to practice saying it. The Quiz tab tests you on the phrases. There are ${formatCount(phrases)} phrases across ${formatCount(specialties.length)} specialties in ${formatCount(availableLanguages.length)} languages.`));
   section.append(radialChart('Phrases per language', languages, 'language'),
     radialChart('Phrases per specialty', specialties, 'specialty'));
   const authors = document.createElement('h3');
